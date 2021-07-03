@@ -13,14 +13,14 @@ int is_dir_arg(char *name);
 void walk(char *name);
 int is_dir(struct dirent *entry);
 int check_dir_name(char *name);
-char * build_full_name(char *cur_full_name, char *base_name, char *entry_name);
+char * build_fullname(char *cur_full_name, char *base_name, char *entry_name);
 
 int main(int argc, char **argv) {
-    
+        
     if (argc == 1) {
         walk(".");
-    } else if (argc == 2 && is_dir_arg(argv[1]) == 0) {
-    	walk(argv[1]);
+    } else if (argc == 2 && is_dir_arg(argv[1])) {
+    	walk(*++argv);
     }
 
     return 0;
@@ -54,20 +54,19 @@ void walk(char *name) {
 
     struct dirent *entry = NULL;
     DIR *dir = open_dir(name);
-    char *full_name = NULL;
+    char *fullname = NULL;
 
     while ((entry = readdir(dir))) {
+        fullname = (char *) malloc((strlen(entry->d_name)
+				+ 1
+				+ strlen(name)
+				+ 1) * sizeof(char));
+	fullname = build_fullname(fullname, name, entry->d_name);
         if (is_dir(entry)) {
-	    full_name = (char *) malloc((strlen(entry->d_name)
-				    + 1
-				    + strlen(name)
-				    + 1) * sizeof(char));
-	    full_name = build_full_name(full_name, name, entry->d_name);
-	    printf("%s\n", entry->d_name);
-	    walk(full_name);
-	} else if (strcmp(entry->d_name, PARENT) != 0 
-		   && strcmp(entry->d_name, CURRENT) != 0) {
-            printf("%s\n", entry->d_name);
+	    printf("d - %s\n", entry->d_name);
+	    walk(fullname);
+	} else if (check_dir_name(entry->d_name) && entry->d_name[0] != '.') {
+	    printf("f - %s\n", entry->d_name);
 	}
     }
 }
@@ -78,11 +77,13 @@ int check_dir_name(char *name) {
 }
 
 int is_dir(struct dirent *entry) {
-    return entry->d_type == DT_DIR && check_dir_name(entry->d_name);
+    return entry->d_type == DT_DIR 
+	    && check_dir_name(entry->d_name)
+	    && entry->d_name[0] != '.';
 }
 
-char * build_full_name(char *cur_full_name, char *base_name, char *entry_name) {
-    strcat(cur_full_name, base_name);
-    strcat(cur_full_name, "/");
-    return strcat(cur_full_name, entry_name);
+char * build_fullname(char *cur_fullname, char *base_name, char *entry_name) {
+    strcat(cur_fullname, base_name);
+    strcat(cur_fullname, "/");
+    return strcat(cur_fullname, entry_name);
 }
