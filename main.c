@@ -58,9 +58,8 @@ void walk(char *name) {
 
     while ((entry = readdir(dir))) {
         fullname = (char *) malloc((strlen(entry->d_name)
-				+ 1
 				+ strlen(name)
-				+ 1) * sizeof(char));
+				+ 2) * sizeof(char));
 	fullname = build_fullname(fullname, name, entry->d_name);
         if (is_dir(entry)) {
 	    printf("d - %s\n", entry->d_name);
