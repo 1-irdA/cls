@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,20 +15,18 @@ void walk(char *name);
 int is_dir(struct dirent *entry);
 int check_dir_name(char *name);
 char * build_fullname(char *cur_full_name, char *base_name, char *entry_name);
+void display_file_info(char * fullname);
 
-int main(int argc, char **argv) {
-        
+int main(int argc, char **argv) { 
     if (argc == 1) {
         walk(".");
     } else if (argc == 2 && is_dir_arg(argv[1])) {
     	walk(*++argv);
     }
-
     return 0;
 }
 
 int is_dir_arg(char *name) {
-    
     struct stat info;
 
     if ((stat(name, &info)) == -1) {
@@ -40,7 +39,6 @@ int is_dir_arg(char *name) {
 
 
 DIR* open_dir(char * path) {
-    
     DIR *folder = NULL;
 
     if ((folder = opendir(path)) == NULL) {
@@ -51,7 +49,6 @@ DIR* open_dir(char * path) {
 }
 
 void walk(char *name) {
-
     struct dirent *entry = NULL;
     DIR *dir = open_dir(name);
     char *fullname = NULL;
@@ -60,14 +57,24 @@ void walk(char *name) {
         fullname = (char *) malloc((strlen(entry->d_name)
 				+ strlen(name)
 				+ 2) * sizeof(char));
-	fullname = build_fullname(fullname, name, entry->d_name);
+	    fullname = build_fullname(fullname, name, entry->d_name);
+
         if (is_dir(entry)) {
-	    printf("d - %s\n", entry->d_name);
-	    walk(fullname);
-	} else if (check_dir_name(entry->d_name) && entry->d_name[0] != '.') {
-	    printf("f - %s\n", entry->d_name);
-	}
+	        printf("d - %s\n", entry->d_name);
+	        walk(fullname);
+	    } else if (check_dir_name(entry->d_name)) {
+	        display_file_info(fullname);
+	    }
     }
+}
+
+void display_file_info(char * fullname) {
+    struct stat info;
+
+    if (stat(fullname, &info) == -1) {
+        perror("Unable to get file infos");
+    }
+    printf("f - %s - %ld\n", fullname, info.st_size);
 }
 
 int check_dir_name(char *name) {
